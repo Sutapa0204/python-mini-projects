@@ -1,0 +1,54 @@
+# Trigger the pipeline on changes to the main branch
+trigger:
+  branches:
+    include:
+      - main  # Adjust for the branch you want to track
+
+# Use an Ubuntu-based agent pool for Python
+pool:
+  vmImage: 'ubuntu-latest'
+
+# Define variables for the pipeline
+variables:
+  pythonVersion: '3.8'  # Adjust based on your project’s Python version
+
+stages:
+  - stage: Build
+    jobs:
+      - job: BuildAndTest
+        displayName: 'Build and Test Python Project'
+        
+        steps:
+          # Step 1: Set up the Python environment
+          - task: UsePythonVersion@0
+            inputs:
+              versionSpec: $(pythonVersion)
+              addToPath: true
+
+          # Step 2: Install dependencies from requirements.txt
+          - script: |
+              python -m pip install --upgrade pip
+              pip install -r requirements.txt
+            displayName: 'Install dependencies'
+
+          # Step 3: Run tests
+          - script: |
+              pytest tests/ --junitxml=test-results.xml
+            displayName: 'Run tests with Pytest'
+          
+          # Optional: Publish test results
+          - task: PublishTestResults@2
+            inputs:
+              testResultsFiles: '**/test-results.xml'
+              testRunTitle: 'Python Tests'
+
+          # Step 4: (Optional) Package application
+          - script: |
+              python setup.py sdist bdist_wheel
+            displayName: 'Package Python application'
+            condition: exists('setup.py')
+
+          # Step 5: Publish build artifacts
+          - publish: $(Build.ArtifactStagingDirectory)
+            artifact: drop
+            displayName: 'Publish artifacts'
