@@ -2,7 +2,7 @@
 trigger:
   branches:
     include:
-      - main  # Adjust for the branch you want to track
+      - none  # Adjust for the branch you want to track
 
 # Use an Ubuntu-based agent pool for Python
 pool:
